@@ -35,6 +35,9 @@ class AIChatCog(commands.Cog):
     @app_commands.command(name="clear", description="AIとの会話履歴をリセットします。")
     @app_commands.allowed_installs(guilds=True, users=True)
     async def clearCommand(self, interaction: discord.Interaction):
+        if (interaction.user in self.cooldown) and (self.cooldown[interaction.user]):
+            await interaction.response.send_message("クールダウン中", ephemeral=True)
+            return
         await interaction.response.defer(ephemeral=True)
         self.chatLogs[interaction.user.id] = []
         await Config.saveChatLogs(
