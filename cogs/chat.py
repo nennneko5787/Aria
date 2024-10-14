@@ -61,24 +61,26 @@ class AIChatCog(commands.Cog):
             )
         messages = self.chatLogs[interaction.user.id]
         messages.append({"role": "user", "content": text})
-        stream = await self.openai.chat.completions.create(
-            model=self.userModels[interaction.user.id],
-            messages=messages,
-            stream=True,
-        )
-        response = ""
-        async for chunk in stream:
-            response += chunk.choices[0].delta.content or ""
-            if response == "":
-                await interaction.edit_original_response(content="生成中...")
-            else:
-                await interaction.edit_original_response(content=response)
-        messages.append({"role": "system", "content": response})
-        self.chatLogs[interaction.user.id] = messages
-        await Config.saveChatLogs(
-            interaction.user.id, self.chatLogs[interaction.user.id]
-        )
-        self.cooldown[interaction.user] = False
+        try:
+            stream = await self.openai.chat.completions.create(
+                model=self.userModels[interaction.user.id],
+                messages=messages,
+                stream=True,
+            )
+            response = ""
+            async for chunk in stream:
+                response += chunk.choices[0].delta.content or ""
+                if response == "":
+                    await interaction.edit_original_response(content="生成中...")
+                else:
+                    await interaction.edit_original_response(content=response)
+            messages.append({"role": "system", "content": response})
+            self.chatLogs[interaction.user.id] = messages
+            await Config.saveChatLogs(
+                interaction.user.id, self.chatLogs[interaction.user.id]
+            )
+        finally:
+            self.cooldown[interaction.user] = False
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -100,24 +102,26 @@ class AIChatCog(commands.Cog):
                 )
             messages = self.chatLogs[message.author.id]
             messages.append({"role": "user", "content": message.clean_content})
-            stream = await self.openai.chat.completions.create(
-                model=self.userModels[message.author.id],
-                messages=messages,
-                stream=True,
-            )
-            response = ""
-            async for chunk in stream:
-                response += chunk.choices[0].delta.content or ""
-                if response == "":
-                    await replyedMessage.edit(content="生成中...")
-                else:
-                    await replyedMessage.edit(content=response)
-            messages.append({"role": "system", "content": response})
-            self.chatLogs[message.author.id] = messages
-            await Config.saveChatLogs(
-                message.author.id, self.chatLogs[message.author.id]
-            )
-            self.cooldown[message.author] = False
+            try:
+                stream = await self.openai.chat.completions.create(
+                    model=self.userModels[message.author.id],
+                    messages=messages,
+                    stream=True,
+                )
+                response = ""
+                async for chunk in stream:
+                    response += chunk.choices[0].delta.content or ""
+                    if response == "":
+                        await replyedMessage.edit(content="生成中...")
+                    else:
+                        await replyedMessage.edit(content=response)
+                messages.append({"role": "system", "content": response})
+                self.chatLogs[message.author.id] = messages
+                await Config.saveChatLogs(
+                    message.author.id, self.chatLogs[message.author.id]
+                )
+            finally:
+                self.cooldown[message.author] = False
 
 
 async def setup(bot: commands.Bot):
