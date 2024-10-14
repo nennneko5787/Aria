@@ -89,7 +89,7 @@ class AIChatCog(commands.Cog):
             if (message.author in self.cooldown) and (self.cooldown[message.author]):
                 await message.reply("クールダウン中")
                 return
-            self.cooldown[interaction.user] = True
+            self.cooldown[message.author] = True
             replyedMessage = await message.reply("<:loading:1295326859587747860> 生成中...")
             if not message.author.id in self.chatLogs:
                 self.chatLogs[message.author.id] = []
@@ -120,7 +120,7 @@ class AIChatCog(commands.Cog):
             await Config.saveChatLogs(
                 message.author.id, self.chatLogs[message.author.id]
             )
-            self.cooldown[interaction.user] = False
+            self.cooldown[message.author] = False
 
 
 async def setup(bot: commands.Bot):
