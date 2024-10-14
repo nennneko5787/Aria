@@ -71,6 +71,7 @@ class AIChatCog(commands.Cog):
                 await interaction.edit_original_response(content="生成中...")
             else:
                 await interaction.edit_original_response(content=response)
+        messages.append({"role": "system", "content": response})
         self.chatLogs[interaction.user.id] = messages
         await Config.saveChatLogs(
             interaction.user.id, self.chatLogs[interaction.user.id]
@@ -104,6 +105,7 @@ class AIChatCog(commands.Cog):
                     await replyedMessage.edit(content="生成中...")
                 else:
                     await replyedMessage.edit(content=response)
+            messages.append({"role": "system", "content": response})
             self.chatLogs[message.author.id] = messages
             await Config.saveChatLogs(
                 message.author.id, self.chatLogs[message.author.id]
