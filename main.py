@@ -17,7 +17,7 @@ async def presence():
 
 @bot.event
 async def on_ready():
-    pass
+    presence.start()
 
 @bot.event
 async def setup_hook():
