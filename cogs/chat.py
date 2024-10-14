@@ -7,18 +7,12 @@ from .config import Config
 
 
 class AIChatCog(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.Bot, chatLogs: dict, models: dict):
         self.bot = bot
         self.openai = AsyncOpenAI(api_key="banana", base_url="https://api.voids.top/v1")
-        self.chatLogs: dict[int, list] = {}
-        self.userModels: dict[int, str] = {}
+        self.chatLogs: dict[int, list] = chatLogs
+        self.userModels: dict[int, str] = models
         self.cooldown: dict[discord.User, bool] = {}
-
-    @commands.Cog.listener()
-    async def setup_hook(self):
-        self.chatLogs = await Config.loadChatLogsList()
-        self.userModels: dict[int, str] = await Config.loadUserModels()
-        print("ok")
 
     @app_commands.command(name="model", description="AIのモデルを変更します。")
     @app_commands.allowed_installs(guilds=True, users=True)
@@ -127,4 +121,6 @@ class AIChatCog(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(AIChatCog(bot))
+    chatLogs = await Config.loadChatLogsList()
+    models = await Config.loadUserModels()
+    await bot.add_cog(AIChatCog(bot, chatLogs, models))
