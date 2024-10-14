@@ -12,6 +12,7 @@ class AIChatCog(commands.Cog):
         self.openai = AsyncOpenAI(api_key="banana", base_url="https://api.voids.top/v1")
         self.chatLogs: dict[int, list] = {}
         self.userModels: dict[int, str] = {}
+        self.cooldown: dict[discord.User, bool] = {}
 
     @commands.Cog.listener()
     async def setup_hook(self):
@@ -46,6 +47,10 @@ class AIChatCog(commands.Cog):
     @app_commands.command(name="chat", description="AIと会話します。")
     @app_commands.allowed_installs(guilds=True, users=True)
     async def chatCommand(self, interaction: discord.Interaction, text: str):
+        if (interaction.user in self.cooldown) and (self.cooldown[interaction.user]):
+            await interaction.response.send_message("クールダウン中", ephemeral=True)
+            return
+        self.cooldown[interaction.user] = True
         await interaction.response.send_message("<:loading:1295326859587747860> 生成中...")
         if not interaction.user.id in self.chatLogs:
             self.chatLogs[interaction.user.id] = []
@@ -76,10 +81,15 @@ class AIChatCog(commands.Cog):
         await Config.saveChatLogs(
             interaction.user.id, self.chatLogs[interaction.user.id]
         )
+        self.cooldown[interaction.user] = False
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if (message.author.id != self.bot.user.id) & (self.bot.user in message.mentions):
+            if (message.author in self.cooldown) and (self.cooldown[message.author]):
+                await message.reply("クールダウン中")
+                return
+            self.cooldown[interaction.user] = True
             replyedMessage = await message.reply("<:loading:1295326859587747860> 生成中...")
             if not message.author.id in self.chatLogs:
                 self.chatLogs[message.author.id] = []
@@ -110,6 +120,7 @@ class AIChatCog(commands.Cog):
             await Config.saveChatLogs(
                 message.author.id, self.chatLogs[message.author.id]
             )
+            self.cooldown[interaction.user] = False
 
 
 async def setup(bot: commands.Bot):
