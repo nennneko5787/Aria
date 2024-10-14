@@ -37,4 +37,5 @@ class Config:
     @classmethod
     async def loadUserModels(cls) -> dict:
         async with aiofiles.open(f"./models.json", "wb+") as f:
-            return orjson.loads(await f.read())
+            binary = await f.read()
+            return orjson.loads(binary if binary != b"" else "{}".encode())
