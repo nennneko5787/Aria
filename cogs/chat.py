@@ -78,7 +78,7 @@ class AIChatCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if (message.author.id != self.bot.user.id) | (message.guild.me in message.mentions):
+        if (message.author.id != self.bot.user.id) & (message.guild.me in message.mentions):
             replyedMessage = await message.reply("<:loading:1295326859587747860> 生成中...")
             if not message.author.id in self.chatLogs:
                 self.chatLogs[message.author.id] = []
