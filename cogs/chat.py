@@ -1,5 +1,3 @@
-import asyncio
-
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -78,7 +76,6 @@ class AIChatCog(commands.Cog):
                     await interaction.edit_original_response(content="<a:loading:1295326859587747860> 準備中...")
                 else:
                     await interaction.edit_original_response(content=response)
-                await asyncio.sleep(2)
             embed = discord.Embed(description="-# `/clear` コマンドで会話履歴をリセットできます。\n-# `/model` コマンドで使用するモデルを変更できます。\n-# もしこのボットが役に立ったら、KyashかPayPayで`nennneko5787`に何円かカンパしていただけるとありがたいです！", colour=discord.Colour.og_blurple())
             await interaction.edit_original_response(content=response, embed=embed)
             messages.append({"role": "system", "content": response})
@@ -124,7 +121,6 @@ class AIChatCog(commands.Cog):
                         await replyedMessage.edit(content="<a:loading:1295326859587747860> 準備中...")
                     else:
                         await replyedMessage.edit(content=response)
-                    await asyncio.sleep(2)
                 embed = discord.Embed(description="-# `/clear` コマンドで会話履歴をリセットできます。\n-# `/model` コマンドで使用するモデルを変更できます。\n-# もしこのボットが役に立ったら、KyashかPayPayで`nennneko5787`に何円かカンパしていただけるとありがたいです！", colour=discord.Colour.og_blurple())
                 await replyedMessage.edit(content=response, embed=embed)
                 messages.append({"role": "system", "content": response})
