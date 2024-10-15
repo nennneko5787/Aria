@@ -46,6 +46,7 @@ class AIChatCog(commands.Cog):
     @app_commands.command(name="chat", description="AIと会話します。")
     @app_commands.allowed_installs(guilds=True, users=True)
     async def chatCommand(self, interaction: discord.Interaction, text: str):
+        print(f"{message.author.global_name} @{message.author.name} (ID: {message.author.id})")
         if (interaction.user in self.cooldown) and (self.cooldown[interaction.user]):
             await interaction.response.send_message("クールダウン中", ephemeral=True)
             return
@@ -88,6 +89,7 @@ class AIChatCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        print(f"{message.author.global_name} @{message.author.name} (ID: {message.author.id})")
         dmchannel = await message.author.create_dm()
         if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions) | (message.channel.id == dmchannel.id)):
             if (message.author in self.cooldown) and (self.cooldown[message.author]):
