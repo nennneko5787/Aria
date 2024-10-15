@@ -73,9 +73,11 @@ class AIChatCog(commands.Cog):
             async for chunk in stream:
                 response += chunk.choices[0].delta.content or ""
                 if response == "":
-                    await interaction.edit_original_response(content="<a:loading:1295326859587747860>")
+                    await interaction.edit_original_response(content="<a:loading:1295326859587747860> 準備中...")
                 else:
                     await interaction.edit_original_response(content=response)
+            embed = discord.Embed(description="-# `/clear` コマンドで会話履歴をリセットできます。\n-# `/model` コマンドで使用するモデルを変更できます。\n-# もしこのボットが役に立ったら、KyashかPayPayで`nennneko5787`に何円かカンパしていただけるとありがたいです！", colour=discord.Colour.og_blurple())
+            await interaction.edit_original_response(content=response, embed=embed)
             messages.append({"role": "system", "content": response})
             self.chatLogs[interaction.user.id] = messages
             await Config.saveChatLogs(
@@ -115,9 +117,11 @@ class AIChatCog(commands.Cog):
                 async for chunk in stream:
                     response += chunk.choices[0].delta.content or ""
                     if response == "":
-                        await replyedMessage.edit(content="<a:loading:1295326859587747860>")
+                        await replyedMessage.edit(content="<a:loading:1295326859587747860> 準備中...")
                     else:
                         await replyedMessage.edit(content=response)
+                embed = discord.Embed(description="-# `/clear` コマンドで会話履歴をリセットできます。\n-# `/model` コマンドで使用するモデルを変更できます。\n-# もしこのボットが役に立ったら、KyashかPayPayで`nennneko5787`に何円かカンパしていただけるとありがたいです！", colour=discord.Colour.og_blurple())
+                await replyedMessage.edit(content=response, embed=embed)
                 messages.append({"role": "system", "content": response})
                 self.chatLogs[message.author.id] = messages
                 await Config.saveChatLogs(
