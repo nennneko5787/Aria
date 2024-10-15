@@ -89,7 +89,7 @@ class AIChatCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        print(f"{message.author.global_name} @{message.author.name} (ID: {message.author.id}) {message.content}")
+        print(f"{message.author.global_name} @{message.author.name} (ID: {message.author.id}) {message.content} {message.embeds}")
         dmchannel = await message.author.create_dm()
         if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions) | (message.channel.id == dmchannel.id)):
             if (message.author in self.cooldown) and (self.cooldown[message.author]):
