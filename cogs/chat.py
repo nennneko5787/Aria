@@ -10,7 +10,9 @@ class AIChatCog(commands.Cog):
     def __init__(self, bot: commands.Bot, chatLogs: dict, models: dict):
         self.bot = bot
         self.openai = AsyncOpenAI(api_key="banana", base_url="https://api.voids.top/v1")
+        print(chatLogs)
         self.chatLogs: dict[int, list] = chatLogs
+        print(models)
         self.userModels: dict[int, str] = models
         self.cooldown: dict[discord.User, bool] = {}
 
@@ -48,7 +50,7 @@ class AIChatCog(commands.Cog):
             await interaction.response.send_message("クールダウン中", ephemeral=True)
             return
         self.cooldown[interaction.user] = True
-        await interaction.response.send_message("<:loading:1295326859587747860> 生成中...")
+        await interaction.response.send_message("<a:loading:1295326859587747860> 生成中...")
         if not interaction.user.id in self.chatLogs:
             self.chatLogs[interaction.user.id] = []
             await Config.saveChatLogs(
@@ -71,7 +73,7 @@ class AIChatCog(commands.Cog):
             async for chunk in stream:
                 response += chunk.choices[0].delta.content or ""
                 if response == "":
-                    await interaction.edit_original_response(content="生成中...")
+                    await interaction.edit_original_response(content="<a:loading:1295326859587747860>")
                 else:
                     await interaction.edit_original_response(content=response)
             messages.append({"role": "system", "content": response})
@@ -84,12 +86,13 @@ class AIChatCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if (message.author.id != self.bot.user.id) & (self.bot.user in message.mentions):
+        dmchannel = await message.author.create_dm()
+        if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions) | (message.channel.id == dmchannel.id)):
             if (message.author in self.cooldown) and (self.cooldown[message.author]):
                 await message.reply("クールダウン中")
                 return
             self.cooldown[message.author] = True
-            replyedMessage = await message.reply("<:loading:1295326859587747860> 生成中...")
+            replyedMessage = await message.reply("<a:loading:1295326859587747860> 生成中...")
             if not message.author.id in self.chatLogs:
                 self.chatLogs[message.author.id] = []
                 await Config.saveChatLogs(
@@ -112,7 +115,7 @@ class AIChatCog(commands.Cog):
                 async for chunk in stream:
                     response += chunk.choices[0].delta.content or ""
                     if response == "":
-                        await replyedMessage.edit(content="生成中...")
+                        await replyedMessage.edit(content="<a:loading:1295326859587747860>")
                     else:
                         await replyedMessage.edit(content=response)
                 messages.append({"role": "system", "content": response})

@@ -21,8 +21,10 @@ class Config:
 
     @classmethod
     async def loadChatLogs(cls, userId: int) -> list:
-        async with aiofiles.open(f"./chatLogs/{userId}.json", "wb+") as f:
+        print(f"./chatLogs/{userId}.json")
+        async with aiofiles.open(f"./chatLogs/{userId}.json", "rb") as f:
             binary = await f.read()
+            print(binary)
             return orjson.loads(binary if binary != b"" else "{}".encode())
 
     @classmethod
@@ -30,12 +32,12 @@ class Config:
         users = {}
         pathList = glob.glob("./chatlogs/*.json")
         for path in pathList:
-            userId = os.path.basename(path)
+            userId = os.path.basename(path).split(".")[0]
             users[int(userId)] = await cls.loadChatLogs(userId)
         return users
 
     @classmethod
     async def loadUserModels(cls) -> dict:
-        async with aiofiles.open(f"./models.json", "wb+") as f:
+        async with aiofiles.open(f"./models.json", "rb") as f:
             binary = await f.read()
             return orjson.loads(binary if binary != b"" else "{}".encode())
