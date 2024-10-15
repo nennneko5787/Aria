@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -46,7 +48,6 @@ class AIChatCog(commands.Cog):
     @app_commands.command(name="chat", description="AIと会話します。")
     @app_commands.allowed_installs(guilds=True, users=True)
     async def chatCommand(self, interaction: discord.Interaction, text: str):
-        print(f"{interaction.user.global_name} @{interaction.user.name} (ID: {interaction.user.id}) {text}")
         if (interaction.user in self.cooldown) and (self.cooldown[interaction.user]):
             await interaction.response.send_message("クールダウン中", ephemeral=True)
             return
@@ -77,6 +78,7 @@ class AIChatCog(commands.Cog):
                     await interaction.edit_original_response(content="<a:loading:1295326859587747860> 準備中...")
                 else:
                     await interaction.edit_original_response(content=response)
+                await asyncio.sleep(2)
             embed = discord.Embed(description="-# `/clear` コマンドで会話履歴をリセットできます。\n-# `/model` コマンドで使用するモデルを変更できます。\n-# もしこのボットが役に立ったら、KyashかPayPayで`nennneko5787`に何円かカンパしていただけるとありがたいです！", colour=discord.Colour.og_blurple())
             await interaction.edit_original_response(content=response, embed=embed)
             messages.append({"role": "system", "content": response})
@@ -89,9 +91,7 @@ class AIChatCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        print(f"{message.author.global_name} @{message.author.name} (ID: {message.author.id}) {message.content} {message.embeds}")
-        dmchannel = await message.author.create_dm()
-        if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions) | (message.channel.id == dmchannel.id)):
+        if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions)):
             if (message.author in self.cooldown) and (self.cooldown[message.author]):
                 await message.reply("クールダウン中")
                 return
@@ -122,6 +122,7 @@ class AIChatCog(commands.Cog):
                         await replyedMessage.edit(content="<a:loading:1295326859587747860> 準備中...")
                     else:
                         await replyedMessage.edit(content=response)
+                    await asyncio.sleep(2)
                 embed = discord.Embed(description="-# `/clear` コマンドで会話履歴をリセットできます。\n-# `/model` コマンドで使用するモデルを変更できます。\n-# もしこのボットが役に立ったら、KyashかPayPayで`nennneko5787`に何円かカンパしていただけるとありがたいです！", colour=discord.Colour.og_blurple())
                 await replyedMessage.edit(content=response, embed=embed)
                 messages.append({"role": "system", "content": response})
