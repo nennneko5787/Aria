@@ -91,7 +91,10 @@ class AIChatCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions)):
+        if message.author.bot:
+            return
+        dmchannel = await message.author.create_dm() if not message.author.dm_channel else message.author.dm_channel
+        if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions) | (message.channel.id == dmchannel.id)):
             if (message.author in self.cooldown) and (self.cooldown[message.author]):
                 await message.reply("クールダウン中")
                 return
