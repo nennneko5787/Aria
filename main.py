@@ -10,7 +10,7 @@ dotenv.load_dotenv()
 intents = discord.Intents.default()
 bot = commands.Bot([], intents=intents)
 
-@tasks.loop(seconds=20)
+@tasks.loop(hours=1)
 async def presence():
     appInfo = await bot.application_info()
     await bot.change_presence(activity=discord.Game(f"{appInfo.approximate_guild_count} guilds and {appInfo.approximate_user_install_count} users"))
@@ -22,7 +22,7 @@ async def on_ready():
 @bot.event
 async def setup_hook():
     await bot.load_extension("cogs.chat")
-    asyncio.create_task(bot.tree.sync())
+    await bot.tree.sync()
 
 
 bot.run(os.getenv("discord"))
