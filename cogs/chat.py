@@ -79,7 +79,13 @@ class AIChatCog(commands.Cog):
                     await interaction.edit_original_response(content=response or "<a:loading:1295326859587747860> 準備中...")
                 elif message:
                     await replyedMessage.edit(content=response or "<a:loading:1295326859587747860> 準備中...")
-
+            
+            embed = discord.Embed(description="-# `/clear` コマンドで会話履歴をリセットできます。\n-# `/model` コマンドで使用するモデルを変更できます。\n-# もしこのボットが役に立ったら、KyashかPayPayで`nennneko5787`に何円かカンパしていただけるとありがたいです！", colour=discord.Colour.og_blurple())
+            if interaction:
+                await interaction.edit_original_response(content=response, embed=embed)
+            elif message:
+                await replyedMessage.edit(content=response, embed=embed)
+            
             messages.append({"role": "model", "content": response})
             self.chatLogs[user.id] = messages
             await Config.saveChatLogs(user.id, messages)
