@@ -40,17 +40,17 @@ class AIChatCog(commands.Cog):
 
     @app_commands.command(name="chat", description="AIと会話します。")
     @app_commands.allowed_installs(guilds=True, users=True)
-    async def chatCommand(self, interaction: discord.Interaction, text: str, attachment: discord.Attachment = None):
-        await self.process_chat(interaction.user, text, attachments=[attachment], interaction=interaction)
+    async def chatCommand(self, interaction: discord.Interaction, text: str):
+        await self.process_chat(interaction.user, text, interaction=interaction)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
         if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions) | (message.type == discord.ChannelType.private)):
-            await self.process_chat(message.author, message.clean_content, message.attachments, message=message)
+            await self.process_chat(message.author, message.clean_content, message=message)
 
-    async def process_chat(self, user: discord.User, text: str, attachments: list[discord.Attachment] = None, interaction: discord.Interaction = None, message: discord.Message = None):
+    async def process_chat(self, user: discord.User, text: str, interaction: discord.Interaction = None, message: discord.Message = None):
         if self.cooldown.get(user.id):
             if interaction:
                 await interaction.response.send_message("クールダウン中", ephemeral=True)
@@ -73,25 +73,8 @@ class AIChatCog(commands.Cog):
             self.userModels[user.id] = DEFAULT_MODEL
             await Config.saveUserModel(user.id, DEFAULT_MODEL)
 
-        content = []
-        content.append(
-            {
-                "type": "text",
-                "text": text
-            }
-        )
-
-        if attachments:
-            for attachment in attachments:
-                content.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": attachment.url},
-                    }
-                )
-
         messages = copy.deepcopy(self.chatLogs[user.id])
-        messages.append({"role": "user", "content": content})
+        messages.append({"role": "user", "content": text})
 
         try:
             stream = await self.openai.chat.completions.create(
