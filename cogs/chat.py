@@ -20,6 +20,7 @@ class AIChatCog(commands.Cog):
         self.cooldown: dict[int, bool] = {}
 
     @app_commands.command(name="model", description="AIのモデルを変更します。")
+    @app_commands.allowed_installs(guilds=True, users=True)
     async def modelCommand(self, interaction: discord.Interaction, model: str):
         await interaction.response.defer(ephemeral=True)
         self.userModels[interaction.user.id] = model
@@ -27,6 +28,7 @@ class AIChatCog(commands.Cog):
         await interaction.followup.send(f"モデルを**{model}**に変更しました。", ephemeral=True)
 
     @app_commands.command(name="clear", description="AIとの会話履歴をリセットします。")
+    @app_commands.allowed_installs(guilds=True, users=True)
     async def clearCommand(self, interaction: discord.Interaction):
         if self.cooldown.get(interaction.user.id):
             await interaction.response.send_message("クールダウン中", ephemeral=True)
@@ -37,10 +39,18 @@ class AIChatCog(commands.Cog):
         await interaction.followup.send("会話履歴をリセットしました。", ephemeral=True)
 
     @app_commands.command(name="chat", description="AIと会話します。")
-    async def chatCommand(self, interaction: discord.Interaction, text: str):
-        await self.process_chat(interaction.user, text, interaction=interaction)
+    @app_commands.allowed_installs(guilds=True, users=True)
+    async def chatCommand(self, interaction: discord.Interaction, text: str, attachment: discord.Attachment = None):
+        await self.process_chat(interaction.user, text, attachments=[attachment], interaction=interaction)
 
-    async def process_chat(self, user: discord.User, text: str, interaction=None, message=None):
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        if (message.author.id != self.bot.user.id) & ((self.bot.user in message.mentions) | (message.type == discord.ChannelType.private)):
+            await self.process_chat(message.author, message.clean_content, message.attachments, message=message)
+
+    async def process_chat(self, user: discord.User, text: str, attachments: list[discord.Attachment] = None, interaction: discord.Interaction = None, message: discord.Message = None):
         if self.cooldown.get(user.id):
             if interaction:
                 await interaction.response.send_message("クールダウン中", ephemeral=True)
@@ -63,8 +73,25 @@ class AIChatCog(commands.Cog):
             self.userModels[user.id] = DEFAULT_MODEL
             await Config.saveUserModel(user.id, DEFAULT_MODEL)
 
+        content = []
+        content.append(
+            {
+                "type": "text",
+                "text": text
+            }
+        )
+
+        if attachments:
+            for attachment in attachments:
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": attachment.url},
+                    }
+                )
+
         messages = copy.deepcopy(self.chatLogs[user.id])
-        messages.append({"role": "user", "content": text})
+        messages.append({"role": "user", "content": content})
 
         try:
             stream = await self.openai.chat.completions.create(
@@ -86,9 +113,9 @@ class AIChatCog(commands.Cog):
             elif message:
                 await replyedMessage.edit(content=response, embed=embed)
             
-            messages.append({"role": "model", "content": response})
-            self.chatLogs[user.id] = messages
-            await Config.saveChatLogs(user.id, messages)
+            messages.append({"role": "system", "content": response})
+            self.chatLogs[user.id] = copy.deepcopy(messages)
+            await Config.saveChatLogs(user.id, self.chatLogs[user.id])
 
         except Exception as e:
             if interaction:
@@ -103,4 +130,5 @@ class AIChatCog(commands.Cog):
 async def setup(bot: commands.Bot):
     chatLogs = await Config.loadChatLogsList()
     models = await Config.loadUserModels()
+    print(chatLogs, models)
     await bot.add_cog(AIChatCog(bot, chatLogs, models))
