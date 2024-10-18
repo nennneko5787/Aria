@@ -3,3 +3,4 @@ orjson
 openai
 python-dotenv
 aiofiles
+aiopix-chan
