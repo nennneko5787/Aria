@@ -14,3 +14,6 @@ class PicGenCog(commands.Cog):
     @app_commands.allowed_installs(guilds=True, users=True)
     async def picGenCommand(interaction: discord.Interaction, prompt: str, negative_prompt: str = None):
         await interaction.response.send_message("生成中…")
+        
+async def setup(bot: commands.Bot):
+    await bot.add_cog(PicGenCog(bot))
