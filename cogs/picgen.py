@@ -1,10 +1,11 @@
-import io
-import aiofiles
 import asyncio
-import orjson
+import io
+import os
+
+import aiofiles
 import discord
 import httpx
-import os
+import orjson
 from discord import app_commands
 from discord.ext import commands
 from Pix_Chan import PixAI
@@ -18,6 +19,7 @@ class PicGenCog(commands.Cog):
         self.client = None
         self.account_file = "pix_account.json"
         self.client = httpx.AsyncClient(timeout=300)
+        self.cooldown: dict[int, bool] = {}
 
     async def cog_load(self):
         await self.loadAccount()
@@ -62,32 +64,38 @@ class PicGenCog(commands.Cog):
         await interaction.response.send_message(
             "<a:loading:1295326859587747860> 生成中..."
         )
-        if not self.email:
-            await self.generateAccount()
+        self.cooldown[interaction.user.id] = True
+        try:
+            if not self.email:
+                await self.generateAccount()
 
-        quota = await self.pix.get_quota()
-        if quota < 2200:
-            await self.generateAccount()
+            quota = await self.pix.get_quota()
+            if quota < 2200:
+                await self.generateAccount()
 
-        queryId = await self.pix.generate_image(
-            prompt, negative_prompts=negative_prompts
-        )
-        while True:
-            mediaIds = await self.pix.get_task_by_id(queryId)
-            if mediaIds:
-                break
-            await asyncio.sleep(3)
-
-        files = []
-        count = 0
-        for mediaId in mediaIds:
-            response = await self.client.get(await self.pix.get_media(mediaId))
-            files.append(
-                discord.File(io.BytesIO(response.content), filename=f"{count}.png")
+            queryId = await self.pix.generate_image(
+                prompt, negative_prompts=negative_prompts
             )
-            count += 1
+            while True:
+                mediaIds = await self.pix.get_task_by_id(queryId)
+                if mediaIds:
+                    break
+                await asyncio.sleep(3)
 
-        await interaction.edit_original_response(content="生成完了", attachments=files)
+            files = []
+            count = 0
+            for mediaId in mediaIds:
+                response = await self.client.get(await self.pix.get_media(mediaId))
+                files.append(
+                    discord.File(io.BytesIO(response.content), filename=f"{count}.png")
+                )
+                count += 1
+
+            await interaction.edit_original_response(
+                content="生成完了", attachments=files
+            )
+        finally:
+            self.cooldown[interaction.user.id] = False
 
 
 async def setup(bot: commands.Bot):

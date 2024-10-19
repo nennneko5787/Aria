@@ -1,8 +1,9 @@
 import glob
 import os
+
 import aiofiles
-import orjson
 import aiofiles.os
+import orjson
 
 
 class Config:
