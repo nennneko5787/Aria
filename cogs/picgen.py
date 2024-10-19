@@ -59,7 +59,8 @@ class PicGenCog(commands.Cog):
         self,
         interaction: discord.Interaction,
         prompt: str,
-        negative_prompts: str = None,
+        negative_prompts: str = "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, quality bad, hands bad, eyes bad, face bad, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name\n",
+        model_id: str = "1709400693561386681",
     ):
         await interaction.response.send_message(
             "<a:loading:1295326859587747860> 生成中..."
@@ -74,7 +75,7 @@ class PicGenCog(commands.Cog):
                 await self.generateAccount()
 
             queryId = await self.pix.generate_image(
-                prompt, negative_prompts=negative_prompts
+                prompt, negative_prompts=negative_prompts, model_id=model_id
             )
             while True:
                 mediaIds = await self.pix.get_task_by_id(queryId)
