@@ -1,6 +1,7 @@
 import asyncio
 import io
 import os
+import traceback
 
 import aiofiles
 import discord
@@ -95,6 +96,9 @@ class PicGenCog(commands.Cog):
             await interaction.edit_original_response(
                 content="生成完了", attachments=files
             )
+        except:
+            traceback.print_exc()
+            await self.generateAccount()
         finally:
             self.cooldown[interaction.user.id] = False
 
