@@ -3,4 +3,4 @@ orjson
 openai
 python-dotenv
 aiofiles
-aiopix-chan
+git+https://github.com/nennneko5787/aiopix-chan
