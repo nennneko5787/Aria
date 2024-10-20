@@ -21,14 +21,9 @@ class PicGenCog(commands.Cog):
         self.accounts = {}  # Store user accounts in memory
         self.account_file = "user_pix_accounts.json"
         self.user_pixai_instances: dict[int, PixAI] = {}
-        self.proxies: list[str] = []
 
     async def cog_load(self):
         await self.loadAccounts()
-        response = await self.client.get(
-            "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&protocol=http&proxy_format=protocolipport&format=json&timeout=250"
-        )
-        self.proxies = response.json()["proxies"]
 
     async def loadAccounts(self):
         if os.path.exists(self.account_file):
@@ -62,7 +57,7 @@ class PicGenCog(commands.Cog):
         await self.saveAccounts()
 
         pixai: PixAI = self.user_pixai_instances.get(
-            user_id, PixAI(proxy=random.choice(self.proxies)["proxy"])
+            user_id, PixAI()
         )  # Create PixAI instance for the user
         await pixai.initialize(email, password, login=False)
         await pixai.claim_daily_quota()
