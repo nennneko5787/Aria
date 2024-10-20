@@ -71,6 +71,7 @@ class PicGenCog(commands.Cog):
         self.user_pixai_instances[str(user_id)] = pixai  # Store the instance
 
     @app_commands.command(name="picgen", description="プロンプトから画像を生成します。")
+    @app_commands.allowed_installs(guilds=True, users=True)
     async def picGenCommand(
         self,
         interaction: discord.Interaction,
@@ -85,18 +86,31 @@ class PicGenCog(commands.Cog):
         try:
             user_id = interaction.user.id
 
+            # Check for PixAI instance
             pixai: PixAI = self.user_pixai_instances.get(user_id, None)
             if pixai is None:
                 await self.generateAccount(user_id)
-            else:
-                quota = await pixai.get_quota()
-                if (user_id not in self.accounts) or (quota < 2200):
-                    await self.generateAccount(user_id)
-                else:
-                    email = self.accounts[str(user_id)]["email"]
-                    password = self.accounts[str(user_id)]["password"]
+                pixai = self.user_pixai_instances.get(user_id)  # Retrieve it again
 
-                    await pixai.initialize(email, password, login=True)
+            quota = await pixai.get_quota()
+            if (user_id not in self.accounts) or (quota < 2200):
+                await self.generateAccount(user_id)
+                pixai = self.user_pixai_instances.get(
+                    user_id
+                )  # Retrieve again after generation
+
+            # Check if pixai is still None after attempts to initialize
+            if pixai is None:
+                await interaction.edit_original_response(
+                    content="アカウントの生成に失敗しました。再試行してください。"
+                )
+                return
+
+            # Continue with the image generation
+            email = self.accounts[str(user_id)]["email"]
+            password = self.accounts[str(user_id)]["password"]
+
+            await pixai.initialize(email, password, login=True)
 
             queryId = await pixai.generate_image(
                 prompt, negative_prompts=negative_prompts, model_id=model_id
