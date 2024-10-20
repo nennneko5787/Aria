@@ -26,7 +26,7 @@ class PicGenCog(commands.Cog):
     async def cog_load(self):
         await self.loadAccounts()
         response = await self.client.get(
-            "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&protocol=socks4,socks5&proxy_format=protocolipport&format=json&timeout=1000"
+            "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&protocol=http&proxy_format=protocolipport&format=json&timeout=1000"
         )
         self.proxies = response.json()["proxies"]
 
