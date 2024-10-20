@@ -63,7 +63,8 @@ class PicGenCog(commands.Cog):
         await pixai.claim_daily_quota()
         await pixai.claim_questionnaire_quota()
 
-        self.user_pixai_instances[str(user_id)] = pixai  # Store the instance
+        self.user_pixai_instances[str(user_id)] = pixai
+        return pixai
 
     @app_commands.command(name="picgen", description="プロンプトから画像を生成します。")
     @app_commands.allowed_installs(guilds=True, users=True)
@@ -84,8 +85,7 @@ class PicGenCog(commands.Cog):
             # Attempt to get the PixAI instance
             pixai: PixAI = self.user_pixai_instances.get(user_id, None)
             if pixai is None:
-                await self.generateAccount(user_id)
-                pixai = self.user_pixai_instances.get(user_id)  # Retrieve it again
+                pixai = await self.generateAccount(user_id)
 
             # Check if pixai was created successfully
             if pixai is None:
