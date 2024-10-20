@@ -48,7 +48,7 @@ class PicGenCog(commands.Cog):
         email = f"{self.randomID(10)}@14chan.jp"
         password = self.randomID(20)
 
-        self.accounts[user_id] = {"email": email, "password": password}
+        self.accounts[str(user_id)] = {"email": email, "password": password}
         await self.saveAccounts()
 
         pixai: PixAI = self.user_pixai_instances.get(
@@ -58,7 +58,7 @@ class PicGenCog(commands.Cog):
         await pixai.claim_daily_quota()
         await pixai.claim_questionnaire_quota()
 
-        self.user_pixai_instances[user_id] = pixai  # Store the instance
+        self.user_pixai_instances[str(user_id)] = pixai  # Store the instance
 
     @app_commands.command(name="picgen", description="プロンプトから画像を生成します。")
     async def picGenCommand(
@@ -83,8 +83,8 @@ class PicGenCog(commands.Cog):
                 if (user_id not in self.accounts) or (quota < 2200):
                     await self.generateAccount(user_id)
                 else:
-                    email = self.accounts[user_id]["email"]
-                    password = self.accounts[user_id]["password"]
+                    email = self.accounts[str(user_id)]["email"]
+                    password = self.accounts[str(user_id)]["password"]
 
                     await pixai.initialize(email, password, login=True)
 
