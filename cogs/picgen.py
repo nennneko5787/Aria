@@ -1,6 +1,8 @@
+import random, string
 import asyncio
 import io
 import os
+import traceback
 
 import aiofiles
 import discord
@@ -14,47 +16,51 @@ from Pix_Chan import PixAI
 class PicGenCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.pix = PixAI()
-        self.email: str = None
-        self.client = None
-        self.account_file = "pix_account.json"
         self.client = httpx.AsyncClient(timeout=300)
         self.cooldown: dict[int, bool] = {}
+        self.accounts = {}  # Store user accounts in memory
+        self.account_file = "user_pix_accounts.json"
+        self.user_pixai_instances: dict[int, PixAI] = {}
+        self.proxies: list[str] = []
 
     async def cog_load(self):
-        await self.loadAccount()
+        await self.loadAccounts()
+        response = await self.client.get(
+            "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&protocol=socks4,socks5&proxy_format=protocolipport&format=json&timeout=1000"
+        )
+        self.proxies = response.json()["proxies"]
 
-    async def loadAccount(self):
+    async def loadAccounts(self):
         if os.path.exists(self.account_file):
             async with aiofiles.open(self.account_file, "rb") as f:
-                account_data = orjson.loads(await f.read())
-                self.email = account_data.get("email")
-                self.password = account_data.get("password")
+                self.accounts = orjson.loads(await f.read())
+        else:
+            self.accounts = {}
 
-    async def saveAccount(self, email: str, password: str):
-        account_data = {"email": email, "password": password}
+    async def saveAccounts(self):
         async with aiofiles.open(self.account_file, "wb") as f:
-            await f.write(orjson.dumps(account_data))
+            await f.write(orjson.dumps(self.accounts))
 
-    async def generateAccount(self):
-        while True:
-            response = await self.client.get(
-                "https://api.voids.top/m-kuku-lu/create?domain=nyasan.com"
-            )
-            jsonData = response.json()
-            if jsonData["success"]:
-                break
-        email = jsonData["email"]
-        password = "pixpixsexsex"
+    def randomID(self, n: int):
+        return "".join(random.choices(string.ascii_letters + string.digits, k=n))
 
-        await self.saveAccount(email, password)
+    async def generateAccount(self, user_id: int):
+        email = f"{self.randomID(10)}@14chan.jp"
+        password = self.randomID(20)
 
-        await self.pix.initialize(email, password, login=False)
-        await self.pix.claim_daily_quota()
-        await self.pix.claim_questionnaire_quota()
+        self.accounts[user_id] = {"email": email, "password": password}
+        await self.saveAccounts()
+
+        pixai = self.user_pixai_instances.get(
+            user_id, PixAI(proxy=random.choice(self.proxies))
+        )  # Create PixAI instance for the user
+        await pixai.initialize(email, password, login=False)
+        await pixai.claim_daily_quota()
+        await pixai.claim_questionnaire_quota()
+
+        self.user_pixai_instances[user_id] = pixai  # Store the instance
 
     @app_commands.command(name="picgen", description="プロンプトから画像を生成します。")
-    @app_commands.allowed_installs(guilds=True, users=True)
     async def picGenCommand(
         self,
         interaction: discord.Interaction,
@@ -66,18 +72,26 @@ class PicGenCog(commands.Cog):
         )
         self.cooldown[interaction.user.id] = True
         try:
-            if not self.email:
-                await self.generateAccount()
+            user_id = interaction.user.id
 
-            quota = await self.pix.get_quota()
-            if quota < 2200:
-                await self.generateAccount()
+            pixai = self.user_pixai_instances.get(
+                user_id, PixAI()
+            )  # Use user-specific PixAI instance
 
-            queryId = await self.pix.generate_image(
+            quota = await pixai.get_quota()
+            if (user_id not in self.accounts) or (quota < 2200):
+                await self.generateAccount(user_id)
+            else:
+                email = self.accounts[user_id]["email"]
+                password = self.accounts[user_id]["password"]
+
+                await pixai.initialize(email, password, login=True)
+
+            queryId = await pixai.generate_image(
                 prompt, negative_prompts=negative_prompts
             )
             while True:
-                mediaIds = await self.pix.get_task_by_id(queryId)
+                mediaIds = await pixai.get_task_by_id(queryId)
                 if mediaIds:
                     break
                 await asyncio.sleep(3)
@@ -85,7 +99,7 @@ class PicGenCog(commands.Cog):
             files = []
             count = 0
             for mediaId in mediaIds:
-                response = await self.client.get(await self.pix.get_media(mediaId))
+                response = await self.client.get(await pixai.get_media(mediaId))
                 files.append(
                     discord.File(io.BytesIO(response.content), filename=f"{count}.png")
                 )
@@ -94,6 +108,9 @@ class PicGenCog(commands.Cog):
             await interaction.edit_original_response(
                 content="生成完了", attachments=files
             )
+        except Exception as e:
+            traceback.print_exc()
+            await interaction.edit_original_response(content=str(e))
         finally:
             self.cooldown[interaction.user.id] = False
 
