@@ -33,7 +33,17 @@ class PicGenCog(commands.Cog):
     async def loadAccounts(self):
         if os.path.exists(self.account_file):
             async with aiofiles.open(self.account_file, "rb") as f:
-                self.accounts = orjson.loads(await f.read())
+                try:
+                    content = await f.read()
+                    if content:  # Only try to load if file isn't empty
+                        self.accounts = orjson.loads(content)
+                    else:
+                        self.accounts = {}
+                except orjson.JSONDecodeError:
+                    print(
+                        f"Error decoding JSON from {self.account_file}, initializing empty accounts."
+                    )
+                    self.accounts = {}
         else:
             self.accounts = {}
 
