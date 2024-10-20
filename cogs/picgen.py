@@ -62,7 +62,7 @@ class PicGenCog(commands.Cog):
         await self.saveAccounts()
 
         pixai: PixAI = self.user_pixai_instances.get(
-            user_id, PixAI(proxy=random.choice(self.proxies))
+            user_id, PixAI(proxy=random.choice(self.proxies)["proxy"])
         )  # Create PixAI instance for the user
         await pixai.initialize(email, password, login=False)
         await pixai.claim_daily_quota()
