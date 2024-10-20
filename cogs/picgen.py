@@ -81,12 +81,20 @@ class PicGenCog(commands.Cog):
         try:
             user_id = interaction.user.id
 
-            # Check for PixAI instance
+            # Attempt to get the PixAI instance
             pixai: PixAI = self.user_pixai_instances.get(user_id, None)
             if pixai is None:
                 await self.generateAccount(user_id)
                 pixai = self.user_pixai_instances.get(user_id)  # Retrieve it again
 
+            # Check if pixai was created successfully
+            if pixai is None:
+                await interaction.edit_original_response(
+                    content="アカウントの生成に失敗しました。再試行してください。"
+                )
+                return
+
+            # Now you can safely call get_quota()
             quota = await pixai.get_quota()
             if (user_id not in self.accounts) or (quota < 2200):
                 await self.generateAccount(user_id)
@@ -94,7 +102,7 @@ class PicGenCog(commands.Cog):
                     user_id
                 )  # Retrieve again after generation
 
-            # Check if pixai is still None after attempts to initialize
+            # Ensure pixai is still valid after quota check
             if pixai is None:
                 await interaction.edit_original_response(
                     content="アカウントの生成に失敗しました。再試行してください。"
