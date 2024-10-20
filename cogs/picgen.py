@@ -51,7 +51,7 @@ class PicGenCog(commands.Cog):
         self.accounts[user_id] = {"email": email, "password": password}
         await self.saveAccounts()
 
-        pixai = self.user_pixai_instances.get(
+        pixai: PixAI = self.user_pixai_instances.get(
             user_id, PixAI(proxy=random.choice(self.proxies))
         )  # Create PixAI instance for the user
         await pixai.initialize(email, password, login=False)
@@ -75,18 +75,18 @@ class PicGenCog(commands.Cog):
         try:
             user_id = interaction.user.id
 
-            pixai = self.user_pixai_instances.get(
-                user_id, PixAI()
-            )  # Use user-specific PixAI instance
-
-            quota = await pixai.get_quota()
-            if (user_id not in self.accounts) or (quota < 2200):
+            pixai: PixAI = self.user_pixai_instances.get(user_id, None)
+            if pixai is None:
                 await self.generateAccount(user_id)
             else:
-                email = self.accounts[user_id]["email"]
-                password = self.accounts[user_id]["password"]
+                quota = await pixai.get_quota()
+                if (user_id not in self.accounts) or (quota < 2200):
+                    await self.generateAccount(user_id)
+                else:
+                    email = self.accounts[user_id]["email"]
+                    password = self.accounts[user_id]["password"]
 
-                await pixai.initialize(email, password, login=True)
+                    await pixai.initialize(email, password, login=True)
 
             queryId = await pixai.generate_image(
                 prompt, negative_prompts=negative_prompts, model_id=model_id
